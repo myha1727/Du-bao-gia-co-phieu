@@ -238,10 +238,24 @@ start_date = end_date - timedelta(days=365 * years_history)
 try:
     with st.spinner(f"Đang tải dữ liệu {ticker} và huấn luyện mô hình LSTM..."):
         df = load_stock_data(
-            ticker,
-            start_date.isoformat(),
-            end_date.isoformat()
-        )
+    ticker,
+    start_date.isoformat(),
+    end_date.isoformat()
+)
+
+if df.empty:
+    st.error(
+        f"Không tải được dữ liệu của mã {ticker}. "
+        "Hãy kiểm tra mã cổ phiếu hoặc thử lại sau."
+    )
+    st.info(
+        "Bạn có thể thử VNM.VN, FPT.VN hoặc HPG.VN. "
+        "Nếu vẫn lỗi, kiểm tra Logs để xem Yahoo Finance có trả dữ liệu hay không."
+    )
+    st.stop()
+
+st.success(f"Đã tải thành công {len(df)} phiên dữ liệu.")
+st.dataframe(df.tail(5), use_container_width=True)
 
         if df.empty and not ticker.endswith(".VN"):
             st.warning("Không tìm thấy dữ liệu với mã đã nhập. Hãy kiểm tra lại mã cổ phiếu.")
@@ -397,7 +411,7 @@ with tab1:
     ax.grid(True, alpha=0.25)
     ax.legend()
     fig.autofmt_xdate()
-    st.pyplot(fig, use_container_width=True)
+    st.pyplot(fig)
     plt.close(fig)
 
     if change_pct > 1:
@@ -420,7 +434,7 @@ with tab2:
     ax.grid(True, alpha=0.25)
     ax.legend()
     fig.autofmt_xdate()
-    st.pyplot(fig, use_container_width=True)
+    st.pyplot(fig)
     plt.close(fig)
 
     st.caption("Đây là phần dữ liệu kiểm tra mà mô hình chưa dùng để cập nhật trọng số trong quá trình huấn luyện.")
@@ -446,7 +460,7 @@ with tab3:
     ax.set_ylabel("Mean squared error (scaled)")
     ax.grid(True, alpha=0.25)
     ax.legend()
-    st.pyplot(fig, use_container_width=True)
+    st.pyplot(fig)
     plt.close(fig)
 
 with tab4:
