@@ -76,16 +76,47 @@ st.markdown(
 # =========================================================
 # HELPERS
 # =========================================================
-@st.cache_data(ttl=1800, show_spinner=False)
+@st.cache_data(ttl=900, show_spinner=False)
 def load_stock_data(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
-    """Download daily stock data from Yahoo Finance."""
-    df = yf.download(
-        ticker,
-        start=start_date,
-        end=end_date,
-        auto_adjust=False,
-        progress=False
-    )
+    """Tải và chuẩn hóa dữ liệu giá đóng cửa từ Yahoo Finance."""
+    try:
+        df = yf.download(
+            ticker,
+            start=start_date,
+            end=end_date,
+            auto_adjust=True,
+            progress=False,
+            threads=False,
+            timeout=30,
+            multi_level_index=False
+        )
+
+        if df is None or df.empty:
+            return pd.DataFrame()
+
+        # Chuẩn hóa tên cột, kể cả khi Yahoo trả về MultiIndex.
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+
+        df.columns = [str(col).strip() for col in df.columns]
+
+        if "Close" not in df.columns:
+            return pd.DataFrame()
+
+        result = df[["Close"]].copy()
+        result["Close"] = pd.to_numeric(
+            result["Close"], errors="coerce"
+        )
+        result = result.dropna()
+        result = result[~result.index.duplicated(keep="last")]
+        result = result.sort_index()
+        result.index = pd.to_datetime(result.index)
+
+        return result
+
+    except Exception as e:
+        st.warning(f"Không thể tải dữ liệu từ Yahoo Finance: {e}")
+        return pd.DataFrame()
 
     if df is None or df.empty:
         return pd.DataFrame()
